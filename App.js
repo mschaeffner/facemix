@@ -1,6 +1,9 @@
 import React from 'react'
 import { Text, View, TouchableOpacity, Image, Dimensions } from 'react-native'
 import { Camera, Permissions, ImageManipulator } from 'expo'
+import Header from './components/Header'
+import cropPhotoToTiles from './util/cropPhotoToTiles'
+
 
 const MATRIX_SIZE = 3
 
@@ -14,75 +17,41 @@ export default class App extends React.Component {
     const { status } = await Permissions.askAsync(Permissions.CAMERA)
     this.setState({
       hasCameraPermission: status === 'granted',
-      photos: null
+      tiles: null
     })
-  }
-
-  async cropPhotoToTile(photo, row, col) {
-    const dim = (photo.width < photo.height) ? photo.width : photo.height
-    const tileDim = dim / MATRIX_SIZE
-
-    const offsetX = (photo.width > photo.height) ? (photo.width - photo.height) / 2 : 0
-    const offsetY = (photo.width < photo.height) ? (photo.height - photo.width) / 2 : 0
-
-    const cropConfig = {
-      originX: tileDim * row + offsetX,
-      originY: tileDim * col + offsetY,
-      width: tileDim,
-      height: tileDim
-    }
-
-    const result = await ImageManipulator.manipulate(
-      photo.uri,
-      [
-        { flip: { horizontal: true } },
-        { crop: cropConfig },
-      ],
-      { format: 'png' }
-    )
-
-    return result
   }
 
   async snap() {
     if (this.camera) {
       const photo = await this.camera.takePictureAsync({ exif: true })
-
-      const photos = []
-      for (let row = 0; row < MATRIX_SIZE; row++) {
-        photos.push([])
-        for (let col = 0; col < MATRIX_SIZE; col++) {
-          const tiledPhoto = await this.cropPhotoToTile(photo, row, col)
-          photos[row].push(tiledPhoto)
-        }
-      }
-
-      this.setState({ photos })
+      const tiles = await cropPhotoToTiles(photo, MATRIX_SIZE)
+      this.setState({ tiles })
     }
   }
 
   render() {
+    const windowWidth = Dimensions.get('window').width
+
     const { hasCameraPermission } = this.state
     if (hasCameraPermission === null) {
       return <View />
     } else if (hasCameraPermission === false) {
       return <Text>No access to camera</Text>
-    } else if (this.state.photos) {
+    } else if (this.state.tiles) {
 
-      const tileWidth = Dimensions.get('window').width / MATRIX_SIZE
       const tileStyle = {
-        width: tileWidth,
-        height: tileWidth,
+        width: windowWidth / MATRIX_SIZE,
+        height: windowWidth / MATRIX_SIZE,
         borderWidth: 1,
         borderColor: '#FFF'
       }
 
       return (
         <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-start', alignContent: 'flex-start' }}>
-          {this.state.photos.map((row, index) =>
+          {this.state.tiles.map((row, index) =>
             <View key={index} style={{ flex: 1, flexDirection: 'column', justifyContent: 'flex-start', alignContent: 'flex-start' }}>
-              {row.map(photo =>
-                <Image key={photo.uri} source={{uri: photo.uri}} style={tileStyle} />
+              {row.map(tile =>
+                <Image key={tile.uri} source={{uri: tile.uri}} style={tileStyle} />
               )}
             </View>
           )}
@@ -94,15 +63,22 @@ export default class App extends React.Component {
       return (
         <View style={{ flex: 1 }}>
 
-          <TouchableOpacity style={{height: 100}} onPress={() => this.snap()}>
-            <Text>SNAP</Text>
-          </TouchableOpacity>
+          <Header />
 
-          <Camera
-            style={{ flex: 1 }}
-            type={Camera.Constants.Type.front}
-            ref={ref => this.camera = ref }
-          />
+          <View style={{ flex: 1, justifyContent: 'center' }}>
+            <Camera
+              style={{ height: windowWidth, width: windowWidth }}
+              type={Camera.Constants.Type.front}
+              ref={ref => this.camera = ref }
+            />
+          </View>
+
+          <View style={{ height: 64, backgroundColor: 'red' }}>
+            <TouchableOpacity style={{height: 64}} onPress={() => this.snap()}>
+              <Text>SNAP</Text>
+            </TouchableOpacity>
+          </View>
+
         </View>
       )
     }
