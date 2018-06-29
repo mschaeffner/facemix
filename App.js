@@ -1,86 +1,67 @@
 import React from 'react'
-import { Text, View, TouchableOpacity, Image, Dimensions } from 'react-native'
-import { Camera, Permissions, ImageManipulator } from 'expo'
-import Header from './components/Header'
-import cropPhotoToTiles from './util/cropPhotoToTiles'
+import IntroScreen from './screens/IntroScreen'
+import PhotoScreen from './screens/PhotoScreen'
+import PlayScreen from './screens/PlayScreen'
 
-
-const MATRIX_SIZE = 3
+const SCREEN_INTRO = 1
+const SCREEN_PHOTO = 2
+const SCREEN_PLAY = 3
 
 export default class App extends React.Component {
 
   state = {
-    hasCameraPermission: null
+    currentScreen: SCREEN_INTRO,
+    tiles: null
   }
 
-  async componentDidMount() {
-    const { status } = await Permissions.askAsync(Permissions.CAMERA)
+  onStart() {
     this.setState({
-      hasCameraPermission: status === 'granted',
-      tiles: null
+      currentScreen: SCREEN_PHOTO
     })
   }
 
-  async snap() {
-    if (this.camera) {
-      const photo = await this.camera.takePictureAsync({ exif: true })
-      const tiles = await cropPhotoToTiles(photo, MATRIX_SIZE)
-      this.setState({ tiles })
-    }
+  closeScreen() {
+    this.setState({
+      currentScreen: SCREEN_INTRO,
+    })
+  }
+
+  handlePhotoTiles(tiles) {
+    this.setState({
+      currentScreen: SCREEN_PLAY,
+      tiles
+    })
   }
 
   render() {
-    const windowWidth = Dimensions.get('window').width
+    switch (this.state.currentScreen) {
 
-    const { hasCameraPermission } = this.state
-    if (hasCameraPermission === null) {
-      return <View />
-    } else if (hasCameraPermission === false) {
-      return <Text>No access to camera</Text>
-    } else if (this.state.tiles) {
+      case SCREEN_INTRO:
+        return (
+          <IntroScreen
+            onStart={() => this.onStart()}
+          />
+        )
 
-      const tileStyle = {
-        width: windowWidth / MATRIX_SIZE,
-        height: windowWidth / MATRIX_SIZE,
-        borderWidth: 1,
-        borderColor: '#FFF'
-      }
+      case SCREEN_PHOTO:
+        return(
+          <PhotoScreen
+            closeScreen={() => this.closeScreen()}
+            handlePhotoTiles={tiles => this.handlePhotoTiles(tiles)}
+          />
+        )
 
-      return (
-        <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'flex-start', alignContent: 'flex-start' }}>
-          {this.state.tiles.map((row, index) =>
-            <View key={index} style={{ flex: 1, flexDirection: 'column', justifyContent: 'flex-start', alignContent: 'flex-start' }}>
-              {row.map(tile =>
-                <Image key={tile.uri} source={{uri: tile.uri}} style={tileStyle} />
-              )}
-            </View>
-          )}
-        </View>
-      )
+      case SCREEN_PLAY:
+        return(
+          <PlayScreen
+            closeScreen={() => this.closeScreen()}
+            tiles={this.state.tiles}
+          />
+        )
 
-
-    } else {
-      return (
-        <View style={{ flex: 1 }}>
-
-          <Header />
-
-          <View style={{ flex: 1, justifyContent: 'center' }}>
-            <Camera
-              style={{ height: windowWidth, width: windowWidth }}
-              type={Camera.Constants.Type.front}
-              ref={ref => this.camera = ref }
-            />
-          </View>
-
-          <View style={{ height: 64, backgroundColor: 'red' }}>
-            <TouchableOpacity style={{height: 64}} onPress={() => this.snap()}>
-              <Text>SNAP</Text>
-            </TouchableOpacity>
-          </View>
-
-        </View>
-      )
+      default:
+        return <View/>
     }
   }
+
 }

@@ -1,11 +1,25 @@
 import React from 'react'
-import { Text, View } from 'react-native'
+import { Header } from 'react-native-elements'
 
-const Header = () =>
-  <View style={{ height: 64, paddingTop: 20, backgroundColor: 'blue' }}>
-    <Text style={{ textAlign: 'center', fontSize: 24, color: 'white' }}>
-      Header
-    </Text>
-  </View>
+const titleStyle = {
+  color: '#fff',
+  fontWeight: '800',
+  fontSize: 18
+}
 
-export default Header
+export default ({onClose}) => {
+  if(onClose) {
+    return (
+      <Header
+        centerComponent={{ text: 'Facemix', style: titleStyle }}
+        rightComponent={{ type: 'entypo', icon: 'cross', color: '#fff', onPress:onClose }}
+      />
+    )
+  } else {
+    return (
+      <Header
+        centerComponent={{ text: 'Facemix', style: titleStyle }}
+      />
+    )
+  }
+}
