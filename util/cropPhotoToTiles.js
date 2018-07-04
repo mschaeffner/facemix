@@ -8,8 +8,8 @@ const createTile = async (photo, row, col, matrixSize) => {
   const offsetY = (photo.width < photo.height) ? (photo.height - photo.width) / 2 : 0
 
   const cropConfig = {
-    originX: tileDim * row + offsetX,
-    originY: tileDim * col + offsetY,
+    originX: tileDim * col + offsetX,
+    originY: tileDim * row + offsetY,
     width: tileDim,
     height: tileDim
   }
@@ -35,6 +35,9 @@ const cropPhotoToTiles = async (photo, matrixSize) => {
       result[row].push(tile)
     }
   }
+
+  // remove the last tile (bottom right corner)
+  result[matrixSize - 1][matrixSize - 1].uri = null
   return result
 }
 
