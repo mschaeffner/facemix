@@ -29,15 +29,14 @@ const createTile = async (photo, row, col, matrixSize) => {
 const cropPhotoToTiles = async (photo, matrixSize) => {
   const result = []
   for (let row = 0; row < matrixSize; row++) {
-    result.push([])
     for (let col = 0; col < matrixSize; col++) {
       const tile = await createTile(photo, row, col, matrixSize)
-      result[row].push(tile)
+      result.push(tile.uri)
     }
   }
 
   // remove the last tile (bottom right corner)
-  result[matrixSize - 1][matrixSize - 1].uri = null
+  result[result.length - 1] = null
   return result
 }
 

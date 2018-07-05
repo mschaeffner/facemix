@@ -3,53 +3,64 @@ import { StyleSheet, View, PanResponder, Animated, Image, Dimensions } from 'rea
 import Header from '../components/Header'
 import DraggableImage from '../components/DraggableImage'
 
+const MATRIX_SIZE = 3
+
+const shuffle = (arr) => {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    const temp = arr[i]
+    arr[i] = arr[j]
+    arr[j] = temp
+  }
+  return arr
+}
+
 export default class PlayScreen extends React.Component {
 
   constructor(props) {
     super(props)
     this.state = {
-      tiles: this.props.tiles
+      tiles: shuffle(this.props.tiles)
     }
   }
 
-  move(row, col, direction) {
+  move(index, direction) {
     const tiles = this.state.tiles
-    const uri = tiles[row][col].uri
+    const uri = tiles[index]
 
     switch (direction) {
-      case 'LEFT':
-        tiles[row][col-1].uri = uri
-        break
-      case 'RIGHT':
-        tiles[row][col+1].uri = uri
-        break
       case 'UP':
-        tiles[row-1][col].uri = uri
+        tiles[index - 1] = uri
         break
       case 'DOWN':
-        tiles[row+1][col].uri = uri
+        tiles[index + 1] = uri
+        break
+      case 'LEFT':
+        tiles[index - MATRIX_SIZE] = uri
+        break
+      case 'RIGHT':
+        tiles[index + MATRIX_SIZE] = uri
         break
     }
 
-    tiles[row][col].uri = null
+    tiles[index] = null
     this.setState({tiles})
   }
 
-  renderTile(uri, style, row, col) {
+  renderTile(uri, index, style) {
     if(!uri) {
       return <View key='blank' style={style} />
     }
 
-    const max = this.state.tiles.length - 1
     let allowedMove = null
-    if(row > 0 && this.state.tiles[row-1][col].uri === null) {
-      allowedMove = 'UP'
-    } else if(row < max && this.state.tiles[row+1][col].uri === null) {
-      allowedMove = 'DOWN'
-    } else if(col > 0 && this.state.tiles[row][col-1].uri === null) {
+    if(this.state.tiles[index - MATRIX_SIZE] === null) {
       allowedMove = 'LEFT'
-    } else if(col < max && this.state.tiles[row][col+1].uri === null) {
+    } else if(this.state.tiles[index + MATRIX_SIZE] === null) {
       allowedMove = 'RIGHT'
+    } else if(this.state.tiles[index - 1] === null) {
+      allowedMove = 'UP'
+    } else if(this.state.tiles[index + 1] === null) {
+      allowedMove = 'DOWN'
     }
 
     return (
@@ -58,7 +69,7 @@ export default class PlayScreen extends React.Component {
         source={{uri}}
         style={style}
         allowedMove={allowedMove}
-        onMove={(direction) => this.move(row, col, direction)}
+        onMove={(direction) => this.move(index, direction)}
       />
     )
   }
@@ -66,10 +77,10 @@ export default class PlayScreen extends React.Component {
   render() {
     const windowWidth = Dimensions.get('window').width
     const tileStyle = {
-      width: windowWidth / this.state.tiles.length,
-      height: windowWidth / this.state.tiles.length,
+      width: windowWidth / MATRIX_SIZE,
+      height: windowWidth / MATRIX_SIZE,
       borderWidth: 1,
-      borderColor: '#FFF'
+      borderColor: 'white'
     }
 
     return(
@@ -77,19 +88,12 @@ export default class PlayScreen extends React.Component {
 
         <Header onClose={() => this.props.closeScreen()} />
 
-        <View>
-
-          <View style={{ height: windowWidth, width: windowWidth }}>
-            <View style={{ flex: 1, flexDirection: 'column' }}>
-              {this.state.tiles.map((row, i) =>
-                <View key={i} style={{ flex: 1, flexDirection: 'row' }}>
-                  {row.map((tile, j) => this.renderTile(tile.uri, tileStyle, i, j))}
-                </View>
-              )}
-            </View>
+        <View style={{ height: windowWidth, width: windowWidth }}>
+          <View style={{ flex: 1, flexDirection: 'column', flexWrap: 'wrap' }}>
+            {this.state.tiles.map((tile, index) =>
+              this.renderTile(tile, index, tileStyle)
+            )}
           </View>
-
-
         </View>
 
       </View>
