@@ -30,7 +30,7 @@ const cropPhotoToTiles = async (photo, matrixSize) => {
   const result = []
   for (let row = 0; row < matrixSize; row++) {
     for (let col = 0; col < matrixSize; col++) {
-      const tile = await createTile(photo, row, col, matrixSize)
+      const tile = await createTile(photo, col, row, matrixSize)
       result.push(tile.uri)
     }
   }
